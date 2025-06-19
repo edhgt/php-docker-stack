@@ -1,0 +1,28 @@
+FROM php:8.2-fpm-alpine
+
+RUN apk add --no-cache \
+    zip \
+    unzip \
+    curl \
+    libxml2-dev \
+    oniguruma-dev \
+    libpng-dev \
+    libzip \
+    libzip-dev \
+    && docker-php-ext-configure zip \
+    && docker-php-ext-install \
+        mbstring \
+        pdo \
+        pdo_mysql \
+        xml \
+        zip \
+        gd \
+        bcmath \
+        exif \
+    && rm -rf /var/cache/apk/*
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www/html
+
+USER www-data

@@ -1,0 +1,27 @@
+server {
+    listen 80;
+    return 301 https://{{PROJECT_NAME}}.test$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name {{PROJECT_NAME}}.test;
+    root /var/www/{{PROJECT_NAME}}/public;
+    
+    index index.php index.html;
+
+    ssl_certificate     /etc/ssl/private/mineco.crt;
+    ssl_certificate_key /etc/ssl/private/mineco.key;
+    
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+    
+    location ~ \.php$ {
+        fastcgi_pass php:9000;
+        fastcgi_index index.php;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        fastcgi_param DOCUMENT_ROOT $realpath_root;
+    }
+}

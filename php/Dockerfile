@@ -1,0 +1,34 @@
+FROM php:8.2-fpm-alpine
+
+# Instalar dependencias y extensiones
+RUN apk add --no-cache \
+    zip \
+    unzip \
+    curl \
+    libxml2-dev \
+    oniguruma-dev \
+    libpng-dev \
+    libzip \
+    libzip-dev \
+    openldap-dev \
+    && docker-php-ext-configure zip \
+    && docker-php-ext-install \
+        mbstring \
+        pdo \
+        pdo_mysql \
+        xml \
+        zip \
+        ldap \
+        gd \
+        bcmath \
+        exif \
+	soap \
+    && rm -rf /var/cache/apk/*
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+RUN adduser -D -u 1000 -h /var/www -s /bin/sh edhernandez
+
+WORKDIR /var/www
+
+USER edhernandez
