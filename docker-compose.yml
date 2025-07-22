@@ -1,5 +1,6 @@
 services:
   nginx:
+    container_name: nginx
     build:
       context: ./nginx
       dockerfile: Dockerfile
@@ -19,12 +20,39 @@ services:
     command: ["sh", "-c", "/scripts/setup-vhost.sh && nginx -g 'daemon off;'"]
 
   php:
+    container_name: php
     build:
       context: ./php
       dockerfile: Dockerfile
-    image: edhgt/laravel-php-8.2-fpm-alpine-ldap
+    image: edhgt/laravel-php-8.2-fpm-alpine
     volumes:
       - ~/development/php:/var/www
+    depends_on:
+      - db
+
+  db:
+    container_name: mariadb
+    image: mariadb:10.11
+    ports:
+      - 3306:3306
     environment:
-      - USER_ID=1000
-      - GROUP_ID=1000
+      MARIADB_ROOT_PASSWORD: abc123
+    volumes:
+      - db-data:/var/lib/mysql:Z
+  node:
+    container_name: node
+    build:
+      context: ./node
+      dockerfile: Dockerfile
+      args:
+        - NODE_VERSION=22
+    image: edhgt/node:22-alpine
+    ports:
+      - 5173:5173
+    volumes:
+      - ~/development:/var/www
+
+volumes:
+  db-data:
+    external: true
+    name: mariadb
