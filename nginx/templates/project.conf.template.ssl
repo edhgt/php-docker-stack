@@ -11,7 +11,7 @@ server {
     index index.php index.html;
 
     ssl_certificate     /etc/ssl/private/mineco.crt;
-    ssl_certificate_key /etc/ssl/private/mineco.key;
+    ssl_certificate_key /etc/ssl/private/mineco_without_password.key;
     
     location / {
         try_files $uri $uri/ /index.php?$query_string;
