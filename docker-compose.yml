@@ -25,9 +25,9 @@ services:
     volumes:
       - ~/development/php:/var/www
     depends_on:
-      - db        
+      - mariadb        
 
-  db:
+  mariadb:
     container_name: mariadb
     image: mariadb:${MARIADB_VERSION}
     volumes:
