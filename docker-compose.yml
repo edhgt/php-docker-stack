@@ -10,22 +10,20 @@ services:
       - ~/development/php:/var/www
       - ./nginx/templates:/etc/nginx/templates
       - ./nginx/scripts:/scripts
-    depends_on:
-      - php
     command: ["sh", "-c", "/scripts/setup-vhost.sh && nginx -g 'daemon off;'"]
 
   php:
     container_name: php
     build:
       context: ./php
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.ldap
+      #dockerfile: Dockerfile-fpm-8.2.sqlsrv
       args:
         - PHP_VERSION=${PHP_VERSION}
+    #image: edhgt/laravel-ldap:${PHP_VERSION}
     image: edhgt/laravel-ldap:${PHP_VERSION}
     volumes:
       - ~/development/php:/var/www
-    depends_on:
-      - mariadb        
 
   mariadb:
     container_name: mariadb

@@ -4,6 +4,6 @@ FROM node:${NODE_VERSION}
 
 WORKDIR /var/www
 
-USER node
+# USER node
 
 ENTRYPOINT ["sh", "-c", "trap : TERM INT; sleep infinity & wait"]
