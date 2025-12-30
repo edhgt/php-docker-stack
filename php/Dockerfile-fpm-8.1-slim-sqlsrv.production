@@ -1,9 +1,8 @@
-# Imagen base slim para reducir peso
-FROM php:8.1-fpm-slim
+FROM php:8.1-fpm
 
 ENV ACCEPT_EULA=Y \
     DEBIAN_FRONTEND=noninteractive \
-    TZ=UTC
+    TZ=America/Guatemala
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gnupg2 \
@@ -19,6 +18,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl-dev \
     libxslt-dev \
     unixodbc-dev \
+    nginx \
+    supervisor \
     && rm -rf /var/lib/apt/lists/*
 
 RUN curl -sSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /usr/share/keyrings/microsoft-prod.gpg \
@@ -42,10 +43,13 @@ RUN docker-php-ext-configure zip \
     && pecl install pdo_sqlsrv sqlsrv \
     && docker-php-ext-enable pdo_sqlsrv sqlsrv
 
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-RUN usermod -d /var/www/html www-data
+COPY nginx/nginx.conf /etc/nginx/nginx.conf
+COPY supervisord/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-USER www-data
+EXPOSE 80
+
+CMD ["/usr/bin/supervisord"]

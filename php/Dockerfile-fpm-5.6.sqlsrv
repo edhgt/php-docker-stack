@@ -1,0 +1,69 @@
+FROM php:5.6-fpm
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=America/Guatemala
+
+# Deshabilitar verificación GPG completamente
+RUN echo "Acquire::Check-Valid-Until \"false\";" > /etc/apt/apt.conf.d/10-no-check-valid-until \
+    && echo "Acquire::AllowInsecureRepositories \"true\";" > /etc/apt/apt.conf.d/20-allow-insecure \
+    && echo "APT::Get::AllowUnauthenticated \"true\";" > /etc/apt/apt.conf.d/40-allow-unauth
+
+# Configurar repositorios archivados
+RUN echo "deb [trusted=yes] http://archive.debian.org/debian/ stretch main contrib non-free" > /etc/apt/sources.list \
+    && echo "deb [trusted=yes] http://archive.debian.org/debian-security/ stretch/updates main contrib non-free" >> /etc/apt/sources.list
+
+# Instalar dependencias
+RUN apt-get update && apt-get install -y --no-install-recommends --allow-unauthenticated \
+    gnupg2 curl ca-certificates apt-transport-https \
+    build-essential gcc g++ make autoconf libc-dev pkg-config \
+    unixodbc unixodbc-dev \
+    libxml2-dev libpng-dev libicu-dev \
+    libssl-dev libxslt-dev unzip \
+    nginx supervisor \
+    libtool libltdl-dev libltdl7 re2c \
+    libfreetype6-dev libjpeg62-turbo-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Configurar y compilar extensiones PHP estándar
+RUN docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ --with-png-dir=/usr/include/ \
+    && docker-php-ext-install -j$(nproc) \
+        pdo mbstring xml intl gd bcmath exif
+
+# SQL Server - Repositorio Microsoft
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
+    && curl https://packages.microsoft.com/config/debian/8/prod.list > /etc/apt/sources.list.d/mssql-release.list
+
+# Instalar drivers SQL Server
+RUN apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y --allow-unauthenticated msodbcsql mssql-tools \
+    && echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Compilar extensiones SQL Server manualmente desde GitHub
+RUN cd /tmp \
+    && curl -L https://github.com/Microsoft/msphpsql/archive/refs/tags/v3.2.0.0.tar.gz -o sqlsrv.tar.gz \
+    && tar -xzf sqlsrv.tar.gz \
+    && ls -la /tmp \
+    && cd msphpsql-3.2.0.0 \
+    && ls -la \
+    && cd pdo_sqlsrv \
+    && phpize \
+    && ./configure \
+    && make \
+    && make install \
+    && cd /tmp/msphpsql-3.2.0.0/sqlsrv \
+    && phpize \
+    && ./configure \
+    && make \
+    && make install \
+    && docker-php-ext-enable pdo_sqlsrv sqlsrv \
+    && rm -rf /tmp/msphpsql-3.2.0.0 /tmp/sqlsrv.tar.gz
+
+WORKDIR /var/www/html
+
+COPY nginx/nginx.conf /etc/nginx/nginx.conf
+COPY supervisord/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+EXPOSE 80 443
+
+CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

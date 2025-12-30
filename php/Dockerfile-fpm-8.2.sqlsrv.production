@@ -1,0 +1,63 @@
+
+FROM php:8.2-fpm AS base
+
+ENV ACCEPT_EULA=Y \
+    DEBIAN_FRONTEND=noninteractive \
+    TZ=America/Guatemala
+
+# ---------------------------------------
+# STAGE 1: build de extensiones (dev deps)
+# ---------------------------------------
+FROM base AS build
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gnupg2 curl ca-certificates apt-transport-https \
+    unixodbc-dev libxml2-dev libpng-dev libzip-dev libicu-dev \
+    libssl-dev libxslt-dev libonig-dev unzip \
+    && docker-php-ext-configure zip \
+    && docker-php-ext-install -j$(nproc) \
+        pdo mbstring zip xml intl gd bcmath exif
+
+# MSSQL Drivers
+RUN curl -sSL https://packages.microsoft.com/keys/microsoft.asc \
+    | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/microsoft-prod.gpg] https://packages.microsoft.com/debian/12/prod bookworm main" \
+        > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18 mssql-tools18 \
+    && pecl install pdo_sqlsrv sqlsrv \
+    && docker-php-ext-enable pdo_sqlsrv sqlsrv
+
+# ---------------------------------------
+# STAGE 2: producción (sin dev deps)
+# ---------------------------------------
+FROM php:8.2-fpm AS production
+
+ENV TZ=America/Guatemala
+
+# Copiar extensiones y configuraciones
+COPY --from=build /usr/local/lib/php/extensions /usr/local/lib/php/extensions
+COPY --from=build /usr/local/etc/php/conf.d /usr/local/etc/php/conf.d
+
+# Copiar drivers y herramientas MSSQL
+COPY --from=build /opt/microsoft /opt/microsoft
+COPY --from=build /usr/lib/x86_64-linux-gnu/libmsodbcsql* /usr/lib/x86_64-linux-gnu/
+COPY --from=build /opt/mssql-tools18 /opt/mssql-tools18
+
+ENV PATH="${PATH}:/opt/mssql-tools18/bin"
+
+# Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www/html
+
+# Instalar nginx y supervisord
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    nginx supervisor \
+    libpng16-16 libzip-dev libicu-dev unixodbc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Configuración de supervisord
+COPY supervisord/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+EXPOSE 80

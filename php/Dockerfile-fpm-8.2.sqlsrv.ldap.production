@@ -1,0 +1,36 @@
+FROM php:7.3-fpm
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    TZ=America/Guatemala
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gnupg2 curl ca-certificates apt-transport-https \
+    unixodbc-dev libxml2-dev libpng-dev libzip-dev libicu-dev \
+    libssl-dev libxslt-dev libonig-dev unzip libldap2-dev \
+    nginx supervisor \
+    && docker-php-ext-configure zip \
+    && docker-php-ext-install -j$(nproc) \
+        pdo_mysql pdo mbstring zip xml intl gd bcmath exif ldap \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -sSL https://packages.microsoft.com/keys/microsoft.asc \
+    | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/microsoft-prod.gpg] https://packages.microsoft.com/debian/12/prod bookworm main" \
+        > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y --no-install-recommends msodbcsql18 mssql-tools18 \
+    && pecl install pdo_sqlsrv sqlsrv \
+    && docker-php-ext-enable pdo_sqlsrv sqlsrv \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www/html
+
+COPY supervisord/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+EXPOSE 80 443
+
+CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

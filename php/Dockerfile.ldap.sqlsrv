@@ -17,7 +17,6 @@ RUN apk add --no-cache \
         mbstring \
         pdo \
         pdo_mysql \
-        mysqli \
         xml \
         zip \
         ldap \
