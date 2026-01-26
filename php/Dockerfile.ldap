@@ -1,4 +1,6 @@
-FROM php:8.2-fpm-alpine
+ARG PHP_VERSION="8.2-fpm-alpine"
+
+FROM php:${PHP_VERSION}
 
 # Instalar dependencias y extensiones
 RUN apk add --no-cache \
