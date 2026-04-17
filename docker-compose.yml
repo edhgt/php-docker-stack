@@ -6,26 +6,29 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ~/development/docker/ssl-local-generator/certs:/etc/ssl/private
-      - ~/development/php:/var/www
+      # - ~/development/docker/ssl-local-generator/certs:/etc/ssl/private
+      - /home/edhernandez/development/php:/var/www
       - ./nginx/templates:/etc/nginx/templates
       - ./nginx/scripts:/scripts
     command: ["sh", "-c", "/scripts/setup-vhost.sh && nginx -g 'daemon off;'"]
 
   php:
     container_name: php
+    hostname: php
     build:
       context: ./php
-      dockerfile: Dockerfile.ldap
-      #dockerfile: Dockerfile-fpm-8.2.sqlsrv
+      #dockerfile: Dockerfile.ldap
+      #dockerfile: Dockerfile.ldap.sqlsrv.ftp.dev
+      dockerfile: Dockerfile.ldap.ftp
       args:
         - PHP_VERSION=${PHP_VERSION}
-    #image: edhgt/laravel-ldap:${PHP_VERSION}
-    image: edhgt/laravel-ldap:${PHP_VERSION}
+    #image: edhgt/php:${PHP_VERSION}-laravel-ldap
+    image: edhgt/php:${PHP_VERSION}
     volumes:
       - ~/development/php:/var/www
 
   mariadb:
+    hostname: mariadb
     container_name: mariadb
     image: mariadb:${MARIADB_VERSION}
     volumes:
@@ -45,7 +48,7 @@ services:
     image: edhgt/node:${NODE_VERSION}
     volumes:
       - ~/development:/var/www
-      - ~/development/docker/ssl-local-generator/certs:/home/node/certs
+      # - ~/development/docker/ssl-local-generator/certs:/home/node/certs
     ports:
       - 5173:5173
       - 3000:3000
@@ -53,5 +56,5 @@ services:
 
 volumes:
   db-data:
-    external: true
     name: mariadb
+    external: true

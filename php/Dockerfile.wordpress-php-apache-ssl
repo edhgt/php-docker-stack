@@ -1,4 +1,6 @@
-FROM wordpress:php8.5-apache
+ARG PHP_VERSION="wordpress:php8.5-alpine"
+
+FROM ${PHP_VERSION}
 
 RUN docker-php-ext-install mysqli && docker-php-ext-enable mysqli
 

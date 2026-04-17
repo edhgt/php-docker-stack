@@ -1,4 +1,4 @@
-ARG PHP_VERSION="8.2-fpm-alpine"
+ARG PHP_VERSION="8.4-fpm-alpine"
 
 FROM php:${PHP_VERSION}
 
@@ -16,6 +16,7 @@ RUN apk add --no-cache \
     icu-dev \
     && docker-php-ext-configure zip \
     && docker-php-ext-install \
+        soap \
         mbstring \
         pdo \
         pdo_mysql \
@@ -31,8 +32,6 @@ RUN apk add --no-cache \
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-RUN adduser -D -u 1000 -h /var/www -s /bin/sh edhernandez
+WORKDIR /var/www/html
 
-WORKDIR /var/www
-
-USER edhernandez
+USER 1000
