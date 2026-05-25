@@ -1,0 +1,6 @@
+FROM jjolon/assegys:v1
+
+RUN a2enmod ssl && \
+    a2ensite default-ssl
+    
+EXPOSE 80 443

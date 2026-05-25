@@ -19,11 +19,13 @@ services:
       context: ./php
       #dockerfile: Dockerfile.ldap
       #dockerfile: Dockerfile.ldap.sqlsrv.ftp.dev
-      dockerfile: Dockerfile.ldap.ftp
+      #dockerfile: Dockerfile.ldap.ftp
+      #dockerfile: Dockerfile-fpm-8.2-ghostscript.production
+      dockerfile: Dockerfile.ldap.sqlsrv
       args:
         - PHP_VERSION=${PHP_VERSION}
     #image: edhgt/php:${PHP_VERSION}-laravel-ldap
-    image: edhgt/php:${PHP_VERSION}
+    image: edhgt/php:${PHP_IMAGE_NAME}
     volumes:
       - ~/development/php:/var/www
 
@@ -53,6 +55,7 @@ services:
       - 5173:5173
       - 3000:3000
       - 3001:3001
+      - 5001:5001
 
 volumes:
   db-data:

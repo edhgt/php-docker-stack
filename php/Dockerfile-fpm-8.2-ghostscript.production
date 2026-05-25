@@ -1,4 +1,6 @@
-FROM php:8.2-fpm-alpine
+ARG PHP_VERSION="8.4-fpm-alpine"
+
+FROM php:${PHP_VERSION}
 
 RUN apk add --no-cache \
     ghostscript \
@@ -24,6 +26,6 @@ RUN apk add --no-cache \
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-WORKDIR /var/www/html
+WORKDIR /var/www
 
-USER www-data
+USER 1000

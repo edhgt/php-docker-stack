@@ -1,36 +1,43 @@
-FROM php:8.2-fpm-alpine
+ARG PHP_VERSION="8.4-fpm"
 
-# Instalar dependencias y extensiones
-RUN apk add --no-cache \
-    zip \
-    unzip \
+FROM php:${PHP_VERSION}
+
+RUN apt-get update && apt-get install -y \
+    gnupg2 \
     curl \
+    unzip \
     libxml2-dev \
-    oniguruma-dev \
     libpng-dev \
-    libzip \
     libzip-dev \
-    openldap-dev \
-    icu-dev \
+    libicu-dev \
+    libonig-dev \
+    unixodbc-dev \
+    ca-certificates \
+    apt-transport-https \
     && docker-php-ext-configure zip \
     && docker-php-ext-install \
-        soap \
-        mbstring \
         pdo \
-        pdo_mysql \
-        xml \
+        mbstring \
         zip \
-        ldap \
+        xml \
+        intl \
         gd \
         bcmath \
-        exif \
-        intl \
-    && rm -rf /var/cache/apk/*
+        exif
+
+RUN curl -sSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/microsoft-prod.gpg] https://packages.microsoft.com/debian/12/prod bookworm main" > /etc/apt/sources.list.d/mssql-release.list
+
+RUN apt-get update && ACCEPT_EULA=Y apt-get install -y \
+    msodbcsql18 \
+    mssql-tools18 \
+    && pecl install pdo_sqlsrv sqlsrv \
+    && docker-php-ext-enable pdo_sqlsrv sqlsrv
+
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-RUN adduser -D -u 1000 -h /var/www -s /bin/sh edhernandez
-
 WORKDIR /var/www
 
-USER edhernandez
+USER 1000
