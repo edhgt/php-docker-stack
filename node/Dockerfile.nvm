@@ -1,0 +1,19 @@
+# Usa Node.js 20 sobre Alpine
+FROM node:20-alpine
+
+# Variables de entorno para NVM
+ENV NVM_DIR=/root/.nvm
+ENV NODE_VERSION=20.11.1
+
+# Instala dependencias necesarias, descarga NVM y lo instala
+RUN apk add --no-cache bash curl \
+    && curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash \
+    && . "$NVM_DIR/nvm.sh" \
+    && nvm install $NODE_VERSION \
+    && nvm use $NODE_VERSION \
+    && nvm alias default $NODE_VERSION
+
+# Asegúrate de que nvm esté disponible en bash interactivo
+RUN echo "source $NVM_DIR/nvm.sh" >> /root/.bashrc
+
+ENTRYPOINT ["tail", "-f", "/dev/null"]
