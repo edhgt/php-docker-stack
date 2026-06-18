@@ -7,7 +7,7 @@ services:
       - "443:443"
     volumes:
       # - ~/development/docker/ssl-local-generator/certs:/etc/ssl/private
-      - /home/edhernandez/development/php:/var/www
+      - /home/edhernandez/development/projects/php:/var/www
       - ./nginx/templates:/etc/nginx/templates
       - ./nginx/scripts:/scripts
     command: ["sh", "-c", "/scripts/setup-vhost.sh && nginx -g 'daemon off;'"]
@@ -21,13 +21,15 @@ services:
       #dockerfile: Dockerfile.ldap.sqlsrv.ftp.dev
       #dockerfile: Dockerfile.ldap.ftp
       #dockerfile: Dockerfile-fpm-8.2-ghostscript.production
-      dockerfile: Dockerfile.ldap.sqlsrv
+      dockerfile: Dockerfile.ldap.sqlsrv.ftp.dev
       args:
         - PHP_VERSION=${PHP_VERSION}
     #image: edhgt/php:${PHP_VERSION}-laravel-ldap
     image: edhgt/php:${PHP_IMAGE_NAME}
     volumes:
-      - ~/development/php:/var/www
+      - ~/development/projects/php:/var/www
+    environment:
+      - TZ=America/Guatemala
 
   mariadb:
     hostname: mariadb
@@ -49,7 +51,7 @@ services:
         - NODE_VERSION=${NODE_VERSION}
     image: edhgt/node:${NODE_VERSION}
     volumes:
-      - ~/development:/var/www
+      - ~/development/projects:/var/www
       # - ~/development/docker/ssl-local-generator/certs:/home/node/certs
     ports:
       - 5173:5173
